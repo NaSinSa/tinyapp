@@ -49,9 +49,14 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/:${newShortURL}`);                //here.
 });
 
-app.get("/u/:shortURL", (req, res) => {
+app.get("/u/:shortURL", (req, res) => {                 //This will redirect a user to the website which the one wants to go.
   const longURL = urlDatabase[req.params.shortURL];
   res.redirect(longURL);
+});
+
+app.post("/urls/:shortURL/delete", (req, res) => {      //This is to delete a chosen shortURL. The button is created in urls_index.ejs
+  delete urlDatabase[req.params.shortURL];
+  res.redirect("/urls");
 });
 
 app.get("/hello", (req, res) => {
