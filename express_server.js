@@ -6,6 +6,7 @@ const bodyParser = require("body-parser");
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
 
+// Generating a 6-character string randomly. Instead of using charCode, created an array with lowercase and uppercase alphabets + 10 numbers. This is for shortURL.
 function generateRandomString() {
   const alphanumeric = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',0,1,2,3,4,5,6,7,8,9];
   let random6 = "";
@@ -43,9 +44,9 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  let newShortURL = generateRandomString()
+  let newShortURL = generateRandomString()              //assigning the newly created string to the variable so that I can use it to
   urlDatabase[newShortURL] = req.body.longURL;
-  res.redirect(`/urls/:${newShortURL}`);         // Respond with 'Ok' (we will replace this)
+  res.redirect(`/urls/:${newShortURL}`);                //here.
 });
 
 app.get("/u/:shortURL", (req, res) => {
