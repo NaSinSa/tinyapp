@@ -45,6 +45,11 @@ app.get("/urls/:shortURL", (req, res) => {
 
 app.post("/urls", (req, res) => {
   let newShortURL = generateRandomString()              //assigning the newly created string to the variable so that I can use it to
+  for (let key in urlDatabase) {
+    if (urlDatabase[key] === req.body.longURL) {
+      delete urlDatabase[key];
+    }
+  }
   urlDatabase[newShortURL] = req.body.longURL;
   res.redirect(`/urls/${newShortURL}`);                //here.
 });
@@ -61,6 +66,12 @@ app.post("/urls/:shortURL/delete", (req, res) => {      //This is to delete a ch
 
 app.post("/urls/:shortURL", (req, res) => {      //This is to edit a chosen shortURL. The button is created in urls_index.ejs
   res.redirect(`/urls/${req.params.shortURL}`);
+});
+
+app.post("/urls/:shortURL", (req, res) => {
+  delete urlDatabase[req.params.shortURL];
+  
+  res.redirect("/urls");
 });
 
 app.get("/hello", (req, res) => {
