@@ -23,6 +23,19 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const users = { 
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@example.com", 
+    password: "purple-monkey-dinosaur"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@example.com", 
+    password: "dishwasher-funk"
+  }
+};
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
@@ -51,7 +64,7 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
   let templateVars = { 
-    username: req.cookies["username"],
+    username: req.cookies["username"],                //Using cookies to save and to call usernames
     shortURL: req.params.shortURL, 
     longURL: urlDatabase[req.params.shortURL] };
   res.render("urls_show", templateVars);
@@ -90,6 +103,25 @@ app.post("/login", (req, res) => {
 
 app.post("/logout", (req, res) => {      
   res.clearCookie('username');
+  res.redirect(`/urls`);
+});
+
+app.get("/register", (req, res) => {
+  let templateVars = { 
+    username: req.cookies["username"],
+    shortURL: req.params.shortURL, 
+    longURL: urlDatabase[req.params.shortURL] };
+  res.render("urls_email", templateVars);
+});
+
+app.post("/register", (req, res) => {             //adding a new user to users, the object.
+  let newUserId = generateRandomString();         
+  users[newUserId] = {};                          
+  let newUser = users[newUserId];
+  newUser['id'] = newUserId;
+  newUser.email = req.body.email;
+  newUser.password = req.body.password;
+  res.cookie('user_id',`${newUserId}`);           //adding the new user id to cookies
   res.redirect(`/urls`);
 });
 
