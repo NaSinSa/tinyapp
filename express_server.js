@@ -11,7 +11,7 @@ function generateRandomString() {
   const alphanumeric = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',0,1,2,3,4,5,6,7,8,9];
   let random6 = "";
   for (let i = 0; i < 6; i++) {
-    random6 += alphanumeric[Math.floor(Math.random() * 63)];
+    random6 += alphanumeric[Math.floor(Math.random() * 62)];
   }
   return random6;
 }
@@ -46,7 +46,7 @@ app.get("/urls/:shortURL", (req, res) => {
 app.post("/urls", (req, res) => {
   let newShortURL = generateRandomString()              //assigning the newly created string to the variable so that I can use it to
   urlDatabase[newShortURL] = req.body.longURL;
-  res.redirect(`/urls/:${newShortURL}`);                //here.
+  res.redirect(`/urls/${newShortURL}`);                //here.
 });
 
 app.get("/u/:shortURL", (req, res) => {                 //This will redirect a user to the website which the one wants to go.
@@ -57,6 +57,10 @@ app.get("/u/:shortURL", (req, res) => {                 //This will redirect a u
 app.post("/urls/:shortURL/delete", (req, res) => {      //This is to delete a chosen shortURL. The button is created in urls_index.ejs
   delete urlDatabase[req.params.shortURL];
   res.redirect("/urls");
+});
+
+app.post("/urls/:shortURL", (req, res) => {      //This is to edit a chosen shortURL. The button is created in urls_index.ejs
+  res.redirect(`/urls/${req.params.shortURL}`);
 });
 
 app.get("/hello", (req, res) => {
