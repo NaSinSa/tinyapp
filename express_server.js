@@ -44,14 +44,15 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  let newShortURL = generateRandomString()              //assigning the newly created string to the variable so that I can use it to
+  let newShortURL = generateRandomString()              //assigning the newly created string to the variable so that I can use it to*
   for (let key in urlDatabase) {
-    if (urlDatabase[key] === req.body.longURL) {
+  //it is removing an old one if the submit is for the same longURL,**
+    if (urlDatabase[key] === req.body.longURL) {        
       delete urlDatabase[key];
     }
-  }
+  } //**and reassign the new short url.
   urlDatabase[newShortURL] = req.body.longURL;
-  res.redirect(`/urls/${newShortURL}`);                //here.
+  res.redirect(`/urls/${newShortURL}`);                //*here.
 });
 
 app.get("/u/:shortURL", (req, res) => {                 //This will redirect a user to the website which the one wants to go.
@@ -68,10 +69,9 @@ app.post("/urls/:shortURL", (req, res) => {      //This is to edit a chosen shor
   res.redirect(`/urls/${req.params.shortURL}`);
 });
 
-app.post("/urls/:shortURL", (req, res) => {
-  delete urlDatabase[req.params.shortURL];
-  
-  res.redirect("/urls");
+app.post("/login", (req, res) => {      //This is to 
+  res.cookie('username',`${req.body.username}`);
+  res.redirect(`/urls`);
 });
 
 app.get("/hello", (req, res) => {
