@@ -2,9 +2,11 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
+const cookieParser = require('cookie-parser');
 
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(cookieParser());
 
 // Generating a 6-character string randomly. Instead of using charCode, created an array with lowercase and uppercase alphabets + 10 numbers. This is for shortURL.
 function generateRandomString() {
@@ -29,17 +31,29 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
+
 app.get("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase };
+  let templateVars = {
+    username: req.cookies["username"], 
+    urls: urlDatabase
+  };
   res.render("urls_index", templateVars);
 });
 
+
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  let templateVars = {
+    username: req.cookies["username"], 
+    urls: urlDatabase
+  };
+  res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
+  let templateVars = { 
+    username: req.cookies["username"],
+    shortURL: req.params.shortURL, 
+    longURL: urlDatabase[req.params.shortURL] };
   res.render("urls_show", templateVars);
 });
 
@@ -47,12 +61,12 @@ app.post("/urls", (req, res) => {
   let newShortURL = generateRandomString()              //assigning the newly created string to the variable so that I can use it to*
   for (let key in urlDatabase) {
   //it is removing an old one if the submit is for the same longURL,**
-    if (urlDatabase[key] === req.body.longURL) {        
-      delete urlDatabase[key];
-    }
-  } //**and reassign the new short url.
-  urlDatabase[newShortURL] = req.body.longURL;
-  res.redirect(`/urls/${newShortURL}`);                //*here.
+  if (urlDatabase[key] === req.body.longURL) {        
+    delete urlDatabase[key];
+  }
+} //**and reassign the new short url.
+urlDatabase[newShortURL] = req.body.longURL;
+res.redirect(`/urls/${newShortURL}`);                //*here.
 });
 
 app.get("/u/:shortURL", (req, res) => {                 //This will redirect a user to the website which the one wants to go.
