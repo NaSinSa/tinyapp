@@ -83,8 +83,13 @@ app.post("/urls/:shortURL", (req, res) => {      //This is to edit a chosen shor
   res.redirect(`/urls/${req.params.shortURL}`);
 });
 
-app.post("/login", (req, res) => {      //This is to 
+app.post("/login", (req, res) => {      
   res.cookie('username',`${req.body.username}`);
+  res.redirect(`/urls`);
+});
+
+app.post("/logout", (req, res) => {      
+  res.clearCookie('username');
   res.redirect(`/urls`);
 });
 
