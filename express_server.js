@@ -3,6 +3,7 @@ const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
+const bcrypt = require('bcrypt');
 
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
@@ -132,12 +133,14 @@ app.post("/urls", (req, res) => {
 
 app.get("/u/:shortURL", (req, res) => {                 //This will redirect a user to the website which the one wants to go.
   const urlData = urlDatabase[req.params.shortURL];
-  console.log(req.params.shortURL)
   res.redirect(urlData.longURL);
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {      //This is to delete a chosen shortURL. The button is created in urls_index.ejs
-  if (req.cookies['user_id'] === urlDatabase[urlChecker(urlDatabase, req.body.longURL)]['userID']) {
+
+  console.log(urlDatabase[req.params.shortURL]['userID'], req.cookies['user_id'])
+
+  if (req.cookies['user_id'] === urlDatabase[req.params.shortURL]['userID']) {
     delete urlDatabase[req.params.shortURL];
   }
   res.redirect("/urls");
