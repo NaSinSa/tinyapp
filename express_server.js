@@ -41,9 +41,14 @@ const emailChecker = function (obj, WhatYouWannaCheck) {
 };
 
 const urlsForUser = function (id) {
-  for (let shortURL in urlDatabase) {
-
+  const listShortURL = Object.keys(urlDatabase);
+  const userListOfShortURL = [];
+  for (let shortURL of listShortURL) {
+    if (id === urlDatabase[shortURL]['userID']) {
+      userListOfShortURL.push(shortURL)
+    }
   }
+  return userListOfShortURL;
 }
 
 const urlDatabase = {
@@ -113,7 +118,13 @@ app.get("/urls/:shortURL", (req, res) => {
     urlData: urlData,
     user: user
   };
-  res.render("urls_show", templateVars);
+  if (!req.cookies["user_id"]) {
+    res.send('You should login first or this is not your URL');
+  } else if (!urlsForUser(templateVars['user_id']).find(ele => ele === templateVars.shortURL)) {
+    res.send('You should login first or this is not your URL');
+  } else {
+    res.render("urls_show", templateVars);
+  }
 });
 
 app.post("/urls", (req, res) => {
