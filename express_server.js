@@ -4,6 +4,8 @@ const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcrypt');
+const password = "purple-monkey-dinosaur"; // found in the req.params object
+const hashedPassword = bcrypt.hashSync(password, 10);
 
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
@@ -138,8 +140,6 @@ app.get("/u/:shortURL", (req, res) => {                 //This will redirect a u
 
 app.post("/urls/:shortURL/delete", (req, res) => {      //This is to delete a chosen shortURL. The button is created in urls_index.ejs
 
-  console.log(urlDatabase[req.params.shortURL]['userID'], req.cookies['user_id'])
-
   if (req.cookies['user_id'] === urlDatabase[req.params.shortURL]['userID']) {
     delete urlDatabase[req.params.shortURL];
   }
@@ -163,10 +163,8 @@ app.get("/login", (req, res) => {
 app.post("/login", (req, res) => {      
   // res.cookie('user_id',`${req.body.user_id}`);
   if (!emailChecker(users, req.body.email)) {     //check if a given email matches one of them in the database.
-    console.log(!emailChecker(users, req.body.email))
     return res.send(403);
-  } else if (users[emailChecker(users, req.body.email)]['password'] !== req.body.password) {
-    console.log(!emailChecker(users, req.body.email))
+  } else if (!bcrypt.compareSync(req.body.password, users[emailChecker(users, req.body.email)]['password'])) {
     return res.send(403);
   }
   res.cookie('user_id', emailChecker(users,req.body.email));
@@ -200,9 +198,11 @@ app.post("/register", (req, res) => {             //adding a new user to users, 
   }
   
   newUser.email = req.body.email;
-  newUser.password = req.body.password;
+  newUser.password = bcrypt.hashSync(req.body.password, 10);
   res.cookie('user_id',`${newUserId}`);           //adding the new user id to cookies
   res.redirect(`/urls`);
+console.log(users)
+
 });
 
 
@@ -214,3 +214,4 @@ app.get("/hello", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
+
