@@ -22,7 +22,7 @@ const generateRandomString = function () {
 
 const urlChecker = function (obj, WhatYouWannaCheck) {
   for (const key in obj) {
-    if (obj[key] === WhatYouWannaCheck) {
+    if (obj[key]['longURL'] === WhatYouWannaCheck) {
       return key;                                       //if return obj[key], I cannot use this for url edit. 
     }
   }
@@ -37,23 +37,27 @@ const emailChecker = function (obj, WhatYouWannaCheck) {
   }
 };
 
+const urlsForUser = function (id) {
+  for (let shortURL in urlDatabase) {
 
+  }
+}
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
+  i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
 };
 
+// const urlDatabase = {
+//   "b2xVn2": "http://www.lighthouselabs.ca",
+//   "9sm5xK": "http://www.google.com"
+// };
+
 const users = { 
-  "userRandomID": {
-    id: "userRandomID", 
+  "aJ48lW": {
+    id: "aJ48lW", 
     email: "user@example.com", 
     password: "purple-monkey-dinosaur"
-  },
- "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@example.com", 
-    password: "dishwasher-funk"
   }
 };
 
@@ -96,7 +100,7 @@ app.get("/urls/:shortURL", (req, res) => {
   let templateVars = { 
     user_id: req.cookies["user_id"], 
     shortURL: req.params.shortURL, 
-    longURL: urlDatabase[req.params.shortURL],
+    longURL: urlDatabase[req.params.shortURL][longURL],
     user: user
   };
   res.render("urls_show", templateVars);
@@ -106,12 +110,12 @@ app.post("/urls", (req, res) => {
   let newShortURL = generateRandomString()              //assigning the newly created string to the variable so that I can use it to
 
   delete urlDatabase[urlChecker(urlDatabase, req.body.longURL)];
-  urlDatabase[newShortURL] = req.body.longURL;
+  urlDatabase[newShortURL]['longURL'] = req.body.longURL;
   res.redirect(`/urls/${newShortURL}`);                //here.
 });
 
 app.get("/u/:shortURL", (req, res) => {                 //This will redirect a user to the website which the one wants to go.
-  const longURL = urlDatabase[req.params.shortURL];
+  const longURL = urlDatabase[req.params.shortURL]['longURL'];
   res.redirect(longURL);
 });
 

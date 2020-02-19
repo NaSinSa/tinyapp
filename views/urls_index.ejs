@@ -25,12 +25,14 @@
       </thead>
       <tbody>
         <% for(let url in urls) { %>
+          <% if (urls[url]['userID'] === user) { %>
           <tr>
             <td><%= url %></td>
-            <td><%= urls[url] %></td>
+            <td><%= urls[url]['longURL'] %></td>
             <td><form method="POST" action="/urls/<%= url %>"><button class="btn btn-outline-primary">Edit</button></form></td>
             <td><form method="POST" action="/urls/<%= url %>/delete"><button class="btn btn-outline-danger">Delete</button></form></td>
           </tr>                               <!-- right above, <%= url %> is to assign each url to the delete button-->
+          <% } %>
         <% } %>                               <!-- and to make this work, I added app.post in express_server.js-->
       </tbody>
     </table>
