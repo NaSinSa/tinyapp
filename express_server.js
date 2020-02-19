@@ -32,10 +32,12 @@ const urlChecker = function (obj, WhatYouWannaCheck) {
 const emailChecker = function (obj, WhatYouWannaCheck) {
   for (const key in obj) {
     if (obj[key].email === WhatYouWannaCheck) {
-      return obj[key].email;                                       
+      return key;                                       
     }
   }
 };
+
+
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -65,41 +67,47 @@ app.get("/urls.json", (req, res) => {
 
 
 app.get("/urls", (req, res) => {
+  const user = users[req.cookies["user_id"]];
+
   let templateVars = {
-    username: req.cookies["username"], 
-    urls: urlDatabase
+    user_id: req.cookies["user_id"], 
+    urls: urlDatabase,
+    user: user
   };
+
   res.render("urls_index", templateVars);
 });
 
 
 app.get("/urls/new", (req, res) => {
+  const user = users[req.cookies["user_id"]];
+
   let templateVars = {
-    username: req.cookies["username"], 
-    urls: urlDatabase
+    user_id: req.cookies["user_id"], 
+    urls: urlDatabase,
+    user: user
   };
   res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
+  const user = users[req.cookies["user_id"]];
+
   let templateVars = { 
-    username: req.cookies["username"],                //Using cookies to save and to call usernames
+    user_id: req.cookies["user_id"], 
     shortURL: req.params.shortURL, 
-    longURL: urlDatabase[req.params.shortURL] };
+    longURL: urlDatabase[req.params.shortURL],
+    user: user
+  };
   res.render("urls_show", templateVars);
 });
 
 app.post("/urls", (req, res) => {
-  let newShortURL = generateRandomString()              //assigning the newly created string to the variable so that I can use it to*
-  // for (let key in urlDatabase) {
-  // //it is removing an old one if the submit is for the same longURL,**
-  // if (urlDatabase[key] === req.body.longURL) {        
-  //   delete urlDatabase[key];
-  // }
-// } //**and reassign the new short url.
-delete urlDatabase[urlChecker(urlDatabase, req.body.longURL)];
-urlDatabase[newShortURL] = req.body.longURL;
-res.redirect(`/urls/${newShortURL}`);                //*here.
+  let newShortURL = generateRandomString()              //assigning the newly created string to the variable so that I can use it to
+
+  delete urlDatabase[urlChecker(urlDatabase, req.body.longURL)];
+  urlDatabase[newShortURL] = req.body.longURL;
+  res.redirect(`/urls/${newShortURL}`);                //here.
 });
 
 app.get("/u/:shortURL", (req, res) => {                 //This will redirect a user to the website which the one wants to go.
@@ -116,21 +124,42 @@ app.post("/urls/:shortURL", (req, res) => {      //This is to edit a chosen shor
   res.redirect(`/urls/${req.params.shortURL}`);
 });
 
+app.get("/login", (req, res) => {      
+  const user = users[req.cookies["user_id"]];
+
+  let templateVars = { 
+    user_id: req.cookies["user_id"],
+    user: user
+  };
+  res.render("urls_login", templateVars);
+});
+
 app.post("/login", (req, res) => {      
-  res.cookie('username',`${req.body.username}`);
+  // res.cookie('user_id',`${req.body.user_id}`);
+  if (!emailChecker(users, req.body.email)) {     //check if a given email matches one of them in the database.
+    console.log(!emailChecker(users, req.body.email))
+    return res.send(403);
+  } else if (users[emailChecker(users, req.body.email)]['password'] !== req.body.password) {
+    console.log(!emailChecker(users, req.body.email))
+    return res.send(403);
+  }
+  res.cookie('user_id', emailChecker(users,req.body.email));
   res.redirect(`/urls`);
 });
 
-app.post("/logout", (req, res) => {      
-  res.clearCookie('username');
+app.post("/logout", (req, res) => {  
+  res.clearCookie("user_id");
   res.redirect(`/urls`);
 });
 
 app.get("/register", (req, res) => {
+  const user = users[req.cookies["user_id"]];
+
   let templateVars = { 
-    username: req.cookies["username"],
-    shortURL: req.params.shortURL, 
-    longURL: urlDatabase[req.params.shortURL] };
+    user_id: req.cookies["user_id"],
+    email: users[req.cookies["user_id"]],
+    user: user
+  };
   res.render("urls_email", templateVars);
 });
 
@@ -143,13 +172,14 @@ app.post("/register", (req, res) => {             //adding a new user to users, 
   if (req.body.email === "" || emailChecker(users, req.body.email)) {     //check if a given email is empty or already exists.
     return res.send(400);
   }
-
+  
   newUser.email = req.body.email;
   newUser.password = req.body.password;
   res.cookie('user_id',`${newUserId}`);           //adding the new user id to cookies
   res.redirect(`/urls`);
-  console.log(users)
 });
+
+
 
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");

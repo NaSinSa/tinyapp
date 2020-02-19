@@ -10,21 +10,22 @@
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
     </div>
-    <% if (username === undefined) { %>
-      <div class="navbar-nav" style="text-align: right;"></div>
-        <form class="form-inline" action="/login" method="POST" style="display: inline-block;">
-          <input class="form-control" type="text" name="username" placeholder="Username" style="width: 200px;">
-          <button type="submit" class="btn btn-outline-dark">Login</button>
+    <% if (user_id === undefined) { %>
+      <div class="collapse navbar-collapse" style="text-align: right; "></div>
+        <div class="navbar-nav">
+          <a class="nav-item nav-link" href="/login">Login</a>
+          <a class="nav-item nav-link" href="/register">Register</a>
+        </div>
+      </div>
+    <% } else { %>
+      <div class="collapse navbar-collapse" style="text-align: right; "></div>
+        <form class="form-inline" action="/logout" method="POST" style="display: inline-block;">
+          <div class="collapse navbar-collapse">
+            <span class="nav-item nav-link active">Logged In As: <%= user.email %>!</span>
+            <button type="submit" class="btn btn-outline-dark">Logout</button>
+          </div>
         </form>
       </div>
-    <% } else {%>
-      <div class="navbar-nav" style="text-align: right;"></div>
-        <form class="form-inline" action="/logout" method="POST" style="display: inline-block;">
-          <span class="navbar-link" type="text" name="username">Logged In As: <%= username %>
-          <button type="submit" class="btn btn-outline-dark">Logout</button>
-          </span>
-        </form>
-      </div>      
     <% } %>
   </nav>
 </header>

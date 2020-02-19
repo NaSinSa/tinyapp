@@ -12,17 +12,18 @@
   <header> 
     <%- include ('./partials/_header') %>
   </header>
-  <main style="margin: 1em;" style="text-align: left;">
-    <h3><b>Create Account</b></h3>
-    <div class="navbar-nav" >
-      <form class="form" action="/register" method="POST"  style='line-height:40px'>
-          <label for="email">Email address</label>
-          <input class="form-control" type="email" name="email" placeholder="Enter email" style="width: 300px;">
-          <label for="password">Password</label>
-          <input class="form-control" type="password" name="password" placeholder="Password" style="width: 300px;">
-          <button type="submit" class="btn btn-primary" style="margin-top: 15px;">Register</button>
+  <main style="margin: 1em;">
+    <h3><b>Login</b></h3>
+    <div class="navbar-nav" style="text-align: left;">
+      <form class="form" action="/login" method="POST" style='line-height:40px'>
+        <label for="email">Email address</label>
+        <input class="form-control" type="email" name="email" placeholder="Enter email" style="width: 300px;">
+        <label for="password">Password</label>
+        <input class="form-control" type="password" name="password" placeholder="Password" style="width: 300px;">
+        <button type="submit" class="btn btn-primary" style="margin-top: 15px;">Login</button>
       </form>
-    </div>  
+    </div>
+    
   </main>
   <!-- Bootstrap JS -->
   <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
