@@ -57,7 +57,7 @@ const users = {
   "aJ48lW": {
     id: "aJ48lW", 
     email: "user@example.com", 
-    password: "purple-monkey-dinosaur"
+    password: "1"
   }
 };
 
@@ -85,22 +85,29 @@ app.get("/urls", (req, res) => {
 
 app.get("/urls/new", (req, res) => {
   const user = users[req.cookies["user_id"]];
+  const urlData = urlDatabase[req.params.shortURL];
 
   let templateVars = {
     user_id: req.cookies["user_id"], 
     urls: urlDatabase,
-    user: user
+    user: user,
+    urlData: urlData
   };
-  res.render("urls_new", templateVars);
+  if (user === undefined) {               //if not logged in, kick back to login page
+    res.redirect('/login');
+  } else {
+    res.render("urls_new", templateVars);
+  }
 });
 
 app.get("/urls/:shortURL", (req, res) => {
   const user = users[req.cookies["user_id"]];
+  const urlData = urlDatabase[req.params.shortURL];
 
   let templateVars = { 
     user_id: req.cookies["user_id"], 
     shortURL: req.params.shortURL, 
-    longURL: urlDatabase[req.params.shortURL][longURL],
+    urlData: urlData,
     user: user
   };
   res.render("urls_show", templateVars);
@@ -108,19 +115,31 @@ app.get("/urls/:shortURL", (req, res) => {
 
 app.post("/urls", (req, res) => {
   let newShortURL = generateRandomString()              //assigning the newly created string to the variable so that I can use it to
+  urlDatabase[newShortURL] = {};
+  const urlData = urlDatabase[newShortURL];
 
-  delete urlDatabase[urlChecker(urlDatabase, req.body.longURL)];
-  urlDatabase[newShortURL]['longURL'] = req.body.longURL;
+  if (urlChecker(urlDatabase, req.body.longURL)) {
+    if (req.cookies['user_id'] === urlDatabase[urlChecker(urlDatabase, req.body.longURL)]['userID']) {
+      delete urlDatabase[urlChecker(urlDatabase, req.body.longURL)];
+    }
+  }
+
+  urlData['userID'] = req.cookies["user_id"];
+  urlData['longURL'] = req.body.longURL;
   res.redirect(`/urls/${newShortURL}`);                //here.
+  
 });
 
 app.get("/u/:shortURL", (req, res) => {                 //This will redirect a user to the website which the one wants to go.
-  const longURL = urlDatabase[req.params.shortURL]['longURL'];
-  res.redirect(longURL);
+  const urlData = urlDatabase[req.params.shortURL];
+  console.log(req.params.shortURL)
+  res.redirect(urlData.longURL);
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {      //This is to delete a chosen shortURL. The button is created in urls_index.ejs
-  delete urlDatabase[req.params.shortURL];
+  if (req.cookies['user_id'] === urlDatabase[urlChecker(urlDatabase, req.body.longURL)]['userID']) {
+    delete urlDatabase[req.params.shortURL];
+  }
   res.redirect("/urls");
 });
 
