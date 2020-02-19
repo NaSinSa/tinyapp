@@ -9,7 +9,7 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
 
 // Generating a 6-character string randomly. Instead of using charCode, created an array with lowercase and uppercase alphabets + 10 numbers. This is for shortURL.
-function generateRandomString() {
+const generateRandomString = function () {
   const alphanumeric = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',0,1,2,3,4,5,6,7,8,9];
   let random6 = "";
   for (let i = 0; i < 6; i++) {
@@ -17,6 +17,25 @@ function generateRandomString() {
   }
   return random6;
 }
+
+//A func below is used to relace an exist shortURL to a new one when a user wants to edit.
+
+const urlChecker = function (obj, WhatYouWannaCheck) {
+  for (const key in obj) {
+    if (obj[key] === WhatYouWannaCheck) {
+      return key;                                       //if return obj[key], I cannot use this for url edit. 
+    }
+  }
+};
+
+//This func is to check if a given email by a user exists in our database.
+const emailChecker = function (obj, WhatYouWannaCheck) {
+  for (const key in obj) {
+    if (obj[key].email === WhatYouWannaCheck) {
+      return obj[key].email;                                       
+    }
+  }
+};
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -72,12 +91,13 @@ app.get("/urls/:shortURL", (req, res) => {
 
 app.post("/urls", (req, res) => {
   let newShortURL = generateRandomString()              //assigning the newly created string to the variable so that I can use it to*
-  for (let key in urlDatabase) {
-  //it is removing an old one if the submit is for the same longURL,**
-  if (urlDatabase[key] === req.body.longURL) {        
-    delete urlDatabase[key];
-  }
-} //**and reassign the new short url.
+  // for (let key in urlDatabase) {
+  // //it is removing an old one if the submit is for the same longURL,**
+  // if (urlDatabase[key] === req.body.longURL) {        
+  //   delete urlDatabase[key];
+  // }
+// } //**and reassign the new short url.
+delete urlDatabase[urlChecker(urlDatabase, req.body.longURL)];
 urlDatabase[newShortURL] = req.body.longURL;
 res.redirect(`/urls/${newShortURL}`);                //*here.
 });
@@ -119,10 +139,16 @@ app.post("/register", (req, res) => {             //adding a new user to users, 
   users[newUserId] = {};                          
   let newUser = users[newUserId];
   newUser['id'] = newUserId;
+
+  if (req.body.email === "" || emailChecker(users, req.body.email)) {     //check if a given email is empty or already exists.
+    return res.send(400);
+  }
+
   newUser.email = req.body.email;
   newUser.password = req.body.password;
   res.cookie('user_id',`${newUserId}`);           //adding the new user id to cookies
   res.redirect(`/urls`);
+  console.log(users)
 });
 
 app.get("/hello", (req, res) => {
