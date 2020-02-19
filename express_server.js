@@ -2,14 +2,18 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
-const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
 const password = "purple-monkey-dinosaur"; // found in the req.params object
 const hashedPassword = bcrypt.hashSync(password, 10);
 
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ['lhltiny'],
+  maxAge: 24 * 60 * 60 * 1000
+}))
 
 // Generating a 6-character string randomly. Instead of using charCode, created an array with lowercase and uppercase alphabets + 10 numbers. This is for shortURL.
 const generateRandomString = function () {
@@ -40,6 +44,7 @@ const emailChecker = function (obj, WhatYouWannaCheck) {
   }
 };
 
+//to create an array with urls created by a given user
 const urlsForUser = function (id) {
   const listShortURL = Object.keys(urlDatabase);
   const userListOfShortURL = [];
@@ -79,10 +84,10 @@ app.get("/urls.json", (req, res) => {
 
 
 app.get("/urls", (req, res) => {
-  const user = users[req.cookies["user_id"]];
+  const user = users[req.session.user_id];
 
   let templateVars = {
-    user_id: req.cookies["user_id"], 
+    user_id: req.session.user_id, 
     urls: urlDatabase,
     user: user
   };
@@ -92,11 +97,11 @@ app.get("/urls", (req, res) => {
 
 
 app.get("/urls/new", (req, res) => {
-  const user = users[req.cookies["user_id"]];
+  const user = users[req.session.user_id];
   const urlData = urlDatabase[req.params.shortURL];
 
   let templateVars = {
-    user_id: req.cookies["user_id"], 
+    user_id: req.session.user_id, 
     urls: urlDatabase,
     user: user,
     urlData: urlData
@@ -109,19 +114,19 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const user = users[req.cookies["user_id"]];
+  const user = users[req.session.user_id];
   const urlData = urlDatabase[req.params.shortURL];
 
   let templateVars = { 
-    user_id: req.cookies["user_id"], 
+    user_id: req.session.user_id, 
     shortURL: req.params.shortURL, 
     urlData: urlData,
     user: user
   };
-  if (!req.cookies["user_id"]) {
+  if (!req.session.user_id) {           //check if the user is logged in or not
     res.send('You should login first or this is not your URL');
-  } else if (!urlsForUser(templateVars['user_id']).find(ele => ele === templateVars.shortURL)) {
-    res.send('You should login first or this is not your URL');
+  } else if (!urlsForUser(templateVars['user_id']).find(ele => ele === templateVars.shortURL)) {  //check if the requested url belongs
+    res.send('You should login first or this is not your URL');                                   // to the user
   } else {
     res.render("urls_show", templateVars);
   }
@@ -133,12 +138,12 @@ app.post("/urls", (req, res) => {
   const urlData = urlDatabase[newShortURL];
 
   if (urlChecker(urlDatabase, req.body.longURL)) {
-    if (req.cookies['user_id'] === urlDatabase[urlChecker(urlDatabase, req.body.longURL)]['userID']) {
+    if (req.session.user_id === urlDatabase[urlChecker(urlDatabase, req.body.longURL)]['userID']) {
       delete urlDatabase[urlChecker(urlDatabase, req.body.longURL)];
-    }
+    }     //if a requested url exists and only if it is requested by whoever created it, the url will be deleted.
   }
 
-  urlData['userID'] = req.cookies["user_id"];
+  urlData['userID'] = req.session.user_id;
   urlData['longURL'] = req.body.longURL;
   res.redirect(`/urls/${newShortURL}`);                //here.
   
@@ -151,7 +156,7 @@ app.get("/u/:shortURL", (req, res) => {                 //This will redirect a u
 
 app.post("/urls/:shortURL/delete", (req, res) => {      //This is to delete a chosen shortURL. The button is created in urls_index.ejs
 
-  if (req.cookies['user_id'] === urlDatabase[req.params.shortURL]['userID']) {
+  if (req.session.user_id === urlDatabase[req.params.shortURL]['userID']) {
     delete urlDatabase[req.params.shortURL];
   }
   res.redirect("/urls");
@@ -162,37 +167,36 @@ app.post("/urls/:shortURL", (req, res) => {      //This is to edit a chosen shor
 });
 
 app.get("/login", (req, res) => {      
-  const user = users[req.cookies["user_id"]];
+  const user = users[req.session.user_id];
 
   let templateVars = { 
-    user_id: req.cookies["user_id"],
+    user_id: req.session.user_id,
     user: user
   };
   res.render("urls_login", templateVars);
 });
 
 app.post("/login", (req, res) => {      
-  // res.cookie('user_id',`${req.body.user_id}`);
   if (!emailChecker(users, req.body.email)) {     //check if a given email matches one of them in the database.
     return res.send(403);
   } else if (!bcrypt.compareSync(req.body.password, users[emailChecker(users, req.body.email)]['password'])) {
     return res.send(403);
   }
-  res.cookie('user_id', emailChecker(users,req.body.email));
+  req.session.user_id //emailChecker(users,req.body.email);
   res.redirect(`/urls`);
 });
 
 app.post("/logout", (req, res) => {  
-  res.clearCookie("user_id");
+  req.session = null;         //kills session
   res.redirect(`/urls`);
 });
 
 app.get("/register", (req, res) => {
-  const user = users[req.cookies["user_id"]];
+  const user = users[req.session.user_id];
 
   let templateVars = { 
-    user_id: req.cookies["user_id"],
-    email: users[req.cookies["user_id"]],
+    user_id: req.session.user_id,
+    email: users[req.session.user_id],
     user: user
   };
   res.render("urls_email", templateVars);
@@ -209,8 +213,8 @@ app.post("/register", (req, res) => {             //adding a new user to users, 
   }
   
   newUser.email = req.body.email;
-  newUser.password = bcrypt.hashSync(req.body.password, 10);
-  res.cookie('user_id',`${newUserId}`);           //adding the new user id to cookies
+  newUser.password = bcrypt.hashSync(req.body.password, 10);    //setting a hashed password
+  req.session.user_id = newUserId;           //adding the new user id to session
   res.redirect(`/urls`);
 console.log(users)
 
