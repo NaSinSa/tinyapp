@@ -4,8 +4,8 @@ const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
-const password = "purple-monkey-dinosaur"; // found in the req.params object
-const hashedPassword = bcrypt.hashSync(password, 10);
+const { urlChecker, emailChecker, generateRandomString, urlsForUser } = require('./helpers');
+
 
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
@@ -15,56 +15,10 @@ app.use(cookieSession({
   maxAge: 24 * 60 * 60 * 1000
 }))
 
-// Generating a 6-character string randomly. Instead of using charCode, created an array with lowercase and uppercase alphabets + 10 numbers. This is for shortURL.
-const generateRandomString = function () {
-  const alphanumeric = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',0,1,2,3,4,5,6,7,8,9];
-  let random6 = "";
-  for (let i = 0; i < 6; i++) {
-    random6 += alphanumeric[Math.floor(Math.random() * 62)];
-  }
-  return random6;
-}
-
-//A func below is used to relace an exist shortURL to a new one when a user wants to edit.
-
-const urlChecker = function (obj, WhatYouWannaCheck) {
-  for (const key in obj) {
-    if (obj[key]['longURL'] === WhatYouWannaCheck) {
-      return key;                                       //if return obj[key], I cannot use this for url edit. 
-    }
-  }
-};
-
-//This func is to check if a given email by a user exists in our database.
-const emailChecker = function (obj, WhatYouWannaCheck) {
-  for (const key in obj) {
-    if (obj[key].email === WhatYouWannaCheck) {
-      return key;                                       
-    }
-  }
-};
-
-//to create an array with urls created by a given user
-const urlsForUser = function (id) {
-  const listShortURL = Object.keys(urlDatabase);
-  const userListOfShortURL = [];
-  for (let shortURL of listShortURL) {
-    if (id === urlDatabase[shortURL]['userID']) {
-      userListOfShortURL.push(shortURL)
-    }
-  }
-  return userListOfShortURL;
-}
-
 const urlDatabase = {
   b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
   i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
 };
-
-// const urlDatabase = {
-//   "b2xVn2": "http://www.lighthouselabs.ca",
-//   "9sm5xK": "http://www.google.com"
-// };
 
 const users = { 
   "aJ48lW": {
@@ -125,7 +79,7 @@ app.get("/urls/:shortURL", (req, res) => {
   };
   if (!req.session.user_id) {           //check if the user is logged in or not
     res.send('You should login first or this is not your URL');
-  } else if (!urlsForUser(templateVars['user_id']).find(ele => ele === templateVars.shortURL)) {  //check if the requested url belongs
+  } else if (!urlsForUser(templateVars['user_id'], urlDatabase).find(ele => ele === templateVars.shortURL)) {  //check if the requested url belongs
     res.send('You should login first or this is not your URL');                                   // to the user
   } else {
     res.render("urls_show", templateVars);
@@ -182,7 +136,7 @@ app.post("/login", (req, res) => {
   } else if (!bcrypt.compareSync(req.body.password, users[emailChecker(users, req.body.email)]['password'])) {
     return res.send(403);
   }
-  req.session.user_id //emailChecker(users,req.body.email);
+  req.session.user_id = emailChecker(users, req.body.email); 
   res.redirect(`/urls`);
 });
 
@@ -216,8 +170,7 @@ app.post("/register", (req, res) => {             //adding a new user to users, 
   newUser.password = bcrypt.hashSync(req.body.password, 10);    //setting a hashed password
   req.session.user_id = newUserId;           //adding the new user id to session
   res.redirect(`/urls`);
-console.log(users)
-
+  console.log(users)
 });
 
 
