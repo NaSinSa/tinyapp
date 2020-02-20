@@ -13,7 +13,7 @@ app.use(cookieSession({
   name: 'session',
   keys: ['lhltiny'],
   maxAge: 24 * 60 * 60 * 1000
-}))
+}));
 
 
 //////////////////////
