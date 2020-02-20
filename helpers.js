@@ -40,4 +40,8 @@ const urlsForUser = function (id, obj) {
   return userListOfShortURL;
 };
 
-module.exports = { urlChecker, emailChecker, generateRandomString, urlsForUser }
+const loggedInOrNot = function (user) {
+  return user === undefined;         
+}
+
+module.exports = { urlChecker, emailChecker, generateRandomString, urlsForUser, loggedInOrNot }
