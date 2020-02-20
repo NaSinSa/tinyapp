@@ -16,6 +16,8 @@
         <h3 class="card-title"><b>TinyURL for: <%= urlData['longURL'] %></b></h3>
         <p class="card-text">Short URL: <a href="/u/<%= shortURL %>"><%= shortURL %></a></p>
         <p class="card-text">Visits: <%= urlTracker[shortURL]['visits'] %></p>
+        <p class="card-text">Visitors: <%= urlTracker[shortURL]['visitingMembers'].length + urlTracker[shortURL]['anonymousVisitor']%></p>
+
       </div>
     <div class="card-footer text-muted" style="text-align:center;">
       <h3><b>Edit</b></h3>

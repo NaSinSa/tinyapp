@@ -114,8 +114,11 @@ app.post('/urls', (req, res) => {
 
   urlData['userID'] = req.session.user_id;
   urlData['longURL'] = req.body.longURL;
+
   urlTracker[newShortURL] = {};
   urlTracker[newShortURL]['visits'] = 0;
+  urlTracker[newShortURL]['visitingMembers'] = [];
+  urlTracker[newShortURL]['anonymousVisitor'] = 0;
 
   res.redirect(`/urls/${newShortURL}`);                //*here.
   
@@ -139,8 +142,14 @@ app.post('/urls/:shortURL', (req, res) => {      //This is to edit a chosen shor
 ///////////////////////////////////////////
 app.get('/u/:shortURL', (req, res) => {                 //This will redirect a user to the website which the one wants to go.
   const urlData = urlDatabase[req.params.shortURL];
-  
-  urlTracker[req.params.shortURL]['visits'] += 1;
+  const analytics = urlTracker[req.params.shortURL];
+  analytics['visits'] += 1;
+
+  if (req.session.user_id === undefined) {
+    analytics['anonymousVisitor'] += 1;
+  } else if (!analytics['visitingMembers'].find(ele => (ele === req.session.user_id))) {
+    analytics['visitingMembers'].push(req.session.user_id);
+  }
   urlData === undefined ? res.send('The url you input does not exist') : res.redirect(urlData.longURL);
   
 });
