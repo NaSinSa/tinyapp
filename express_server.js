@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require('body-parser');
+const methodOverride = require('method-override');
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
 const { urlChecker, emailChecker, generateRandomString, urlsForUser, loggedInOrNot } = require('./helpers');
@@ -14,6 +15,7 @@ app.use(cookieSession({
   keys: ['lhltiny'],
   maxAge: 24 * 60 * 60 * 1000
 }));
+app.use(methodOverride('_method'));
 
 
 //////////////////////
@@ -111,7 +113,7 @@ app.post('/urls', (req, res) => {
   
 });
 
-app.post('/urls/:shortURL/delete', (req, res) => {      //This is to delete a chosen shortURL. The button is created in urls_index.ejs
+app.delete('/urls/:shortURL', (req, res) => {      //This is to delete a chosen shortURL. The button is created in urls_index.ejs
 
   if (req.session.user_id === urlDatabase[req.params.shortURL]['userID']) {
     delete urlDatabase[req.params.shortURL];
