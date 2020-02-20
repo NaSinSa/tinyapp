@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require('body-parser');
+const methodOverride = require('method-override');
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
 const { urlChecker, emailChecker, generateRandomString, urlsForUser, loggedInOrNot } = require('./helpers');
@@ -14,6 +15,7 @@ app.use(cookieSession({
   keys: ['lhltiny'],
   maxAge: 24 * 60 * 60 * 1000
 }));
+app.use(methodOverride('_method'));
 
 
 //////////////////////
@@ -22,6 +24,10 @@ app.use(cookieSession({
 const urlDatabase = {
   // b6UTxQ: { longURL: 'https://www.tsn.ca', userID: 'aJ48lW' },     //examples
   // i3BoGr: { longURL: 'https://www.google.ca', userID: 'aJ48lW' }
+};
+
+const urlTracker = {
+  // b6UTxQ: { visits: 0, visitingMembers: [], anonymousVisitor: 0 }     //examples
 };
 
 const users = { 
@@ -79,7 +85,8 @@ app.get('/urls/:shortURL', (req, res) => {
     user_id: req.session.user_id, 
     shortURL: req.params.shortURL, 
     urlData: urlData,
-    user: user
+    user: user,
+    urlTracker: urlTracker
   };
 
   if (loggedInOrNot(user)) {           
@@ -107,16 +114,19 @@ app.post('/urls', (req, res) => {
 
   urlData['userID'] = req.session.user_id;
   urlData['longURL'] = req.body.longURL;
+  urlTracker[newShortURL] = {};
+  urlTracker[newShortURL]['visits'] = 0;
+
   res.redirect(`/urls/${newShortURL}`);                //*here.
   
 });
 
-app.post('/urls/:shortURL/delete', (req, res) => {      //This is to delete a chosen shortURL. The button is created in urls_index.ejs
+app.delete('/urls/:shortURL', (req, res) => {      //This is to delete a chosen shortURL. The button is created in urls_index.ejs
 
   if (req.session.user_id === urlDatabase[req.params.shortURL]['userID']) {
     delete urlDatabase[req.params.shortURL];
   }
-
+  
   res.redirect('/urls');
 });
 
@@ -124,13 +134,15 @@ app.post('/urls/:shortURL', (req, res) => {      //This is to edit a chosen shor
   res.redirect(`/urls/${req.params.shortURL}`);
 });
 
-//////////////////////////////
-//    url function check    //
-//////////////////////////////
+///////////////////////////////////////////
+//    url function check & analytics     //
+///////////////////////////////////////////
 app.get('/u/:shortURL', (req, res) => {                 //This will redirect a user to the website which the one wants to go.
   const urlData = urlDatabase[req.params.shortURL];
-
+  
+  urlTracker[req.params.shortURL]['visits'] += 1;
   urlData === undefined ? res.send('The url you input does not exist') : res.redirect(urlData.longURL);
+  
 });
 
 ////////////////////////////
@@ -167,7 +179,7 @@ app.post('/logout', (req, res) => {
 ////////////////////////
 app.get('/register', (req, res) => {
   const user = users[req.session.user_id];
-
+  
   let templateVars = { 
     user_id: req.session.user_id,
     email: users[req.session.user_id],
@@ -181,7 +193,7 @@ app.post('/register', (req, res) => {             //adding a new user to users, 
   users[newUserId] = {};                          
   let newUser = users[newUserId];
   newUser['id'] = newUserId;
-
+  
   if (req.body.email === '' || emailChecker(users, req.body.email)) {     //check if a given email is empty or already exists.
     return res.send(400);
   }
@@ -199,3 +211,6 @@ app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
 
+// const urlTracker = {
+//   b6UTxQ: { visits: 0, visitingMembers: [], anonymousVisitor: 0 }   
+// };
