@@ -5,7 +5,7 @@ const bodyParser = require('body-parser');
 const methodOverride = require('method-override');
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
-const { urlChecker, emailChecker, generateRandomString, urlsForUser, loggedInOrNot } = require('./helpers');
+const { urlChecker, emailChecker, generateRandomString, urlsForUser, isloggedIn } = require('./helpers');
 
 
 app.set('view engine', 'ejs');
@@ -27,7 +27,7 @@ const urlDatabase = {
 };
 
 const urlTracker = {
-  // b6UTxQ: { visits: 0, visitingMembers: [], anonymousVisitor: 0 }     //examples
+  // b6UTxQ: { visits: 0, visitingMembers: [], anonymousVisitor: 0, dateCreated: "" }     //examples
 };
 
 const users = { 
@@ -48,7 +48,7 @@ const users = {
 app.get('/', (req, res) => {
   const user = users[req.session.user_id];     
 
-  loggedInOrNot(user) ? res.redirect('/login') : res.redirect('/urls');
+  !isloggedIn(user) ? res.redirect('/login') : res.redirect('/urls');
 });
 
 app.get('/urls', (req, res) => {
@@ -57,10 +57,15 @@ app.get('/urls', (req, res) => {
   let templateVars = {
     user_id: req.session.user_id, 
     urls: urlDatabase,
-    user: user
+    user: user,
+    urlTracker: urlTracker
   };
 
-  loggedInOrNot(user) ? res.send("<html><body>Please <a href='/login'>Login</a> first</body></html>") : res.render('urls_index', templateVars);
+  if (!isloggedIn(user)) {
+    res.send("<html><body>Please <a href='/login'>Login</a> first</body></html>");
+  } else {
+    res.render('urls_index', templateVars);
+  }
 });
 
 app.get('/urls/new', (req, res) => {
@@ -74,7 +79,7 @@ app.get('/urls/new', (req, res) => {
     urlData: urlData
   };
 
-  loggedInOrNot(user) ? res.redirect('/login') : res.render('urls_new', templateVars);
+  !isloggedIn(user) ? res.redirect('/login') : res.render('urls_new', templateVars);
 });
 
 app.get('/urls/:shortURL', (req, res) => {
@@ -89,10 +94,10 @@ app.get('/urls/:shortURL', (req, res) => {
     urlTracker: urlTracker
   };
 
-  if (loggedInOrNot(user)) {           
+  if (!isloggedIn(user)) {           
     res.send('You should login first');
-  } else if (!urlsForUser(templateVars['user_id'], urlDatabase).find(ele => ele === templateVars.shortURL)) {  //check if the requested url belongs
-    res.send('The url you input does not exist or you don\'t have permission to access');                      // to the user
+  } else if (!urlsForUser(templateVars['user_id'], urlDatabase).find(ele => ele === templateVars.shortURL)) { 
+    res.send('The url you input does not exist or you don\'t have permission to access');                     
   } else {
     res.render('urls_show', templateVars);
   }
@@ -102,15 +107,9 @@ app.get('/urls/:shortURL', (req, res) => {
 //    short url create, delete & edit    //
 ///////////////////////////////////////////
 app.post('/urls', (req, res) => {
-  let newShortURL = generateRandomString()              //assigning the newly created string to the variable so that I can use it to*
+  let newShortURL = generateRandomString()         
   urlDatabase[newShortURL] = {};
   const urlData = urlDatabase[newShortURL];
-
-  if (urlChecker(urlDatabase, req.body.longURL)) {
-    if (req.session.user_id === urlDatabase[urlChecker(urlDatabase, req.body.longURL)]['userID']) {
-      delete urlDatabase[urlChecker(urlDatabase, req.body.longURL)];
-    }     //if a requested url exists and only if it is requested by whoever created it, the url will be deleted.
-  }
 
   urlData['userID'] = req.session.user_id;
   urlData['longURL'] = req.body.longURL;
@@ -119,36 +118,43 @@ app.post('/urls', (req, res) => {
   urlTracker[newShortURL]['visits'] = 0;
   urlTracker[newShortURL]['visitingMembers'] = [];
   urlTracker[newShortURL]['anonymousVisitor'] = 0;
+  urlTracker[newShortURL]['dateCreated'] = new Date().toLocaleDateString();
 
-  res.redirect(`/urls/${newShortURL}`);                //*here.
+  res.redirect(`/urls/${newShortURL}`);              
   
 });
 
-app.delete('/urls/:shortURL', (req, res) => {      //This is to delete a chosen shortURL. The button is created in urls_index.ejs
+app.delete('/urls/:shortURL', (req, res) => {      //a shortURL delete button in urls_index.ejs
 
   if (req.session.user_id === urlDatabase[req.params.shortURL]['userID']) {
     delete urlDatabase[req.params.shortURL];
-  }
+  }         //a user can only delete urls which he/she creates.
   
   res.redirect('/urls');
 });
 
-app.post('/urls/:shortURL', (req, res) => {      //This is to edit a chosen shortURL. The button is created in urls_index.ejs
+app.post('/urls/:shortURL', (req, res) => {      //a shortURL edit button in urls_index.ejs
   res.redirect(`/urls/${req.params.shortURL}`);
+});
+
+app.put('/urls/:shortURL', (req, res) => {      //change an assgined longURL to a new one
+  urlDatabase[req.params.shortURL]['longURL'] = req.body.longURL;
+  res.redirect('/urls');
 });
 
 ///////////////////////////////////////////
 //    url function check & analytics     //
 ///////////////////////////////////////////
-app.get('/u/:shortURL', (req, res) => {                 //This will redirect a user to the website which the one wants to go.
+app.get('/u/:shortURL', (req, res) => {                 //redirect a user to the website assigned to the shortURL.
   const urlData = urlDatabase[req.params.shortURL];
   const analytics = urlTracker[req.params.shortURL];
+
   analytics['visits'] += 1;
 
   if (req.session.user_id === undefined) {
-    analytics['anonymousVisitor'] += 1;
+    analytics['anonymousVisitor'] += 1;                 //count every visit if can't specify the user.
   } else if (!analytics['visitingMembers'].find(ele => (ele === req.session.user_id))) {
-    analytics['visitingMembers'].push(req.session.user_id);
+    analytics['visitingMembers'].push(req.session.user_id);       //no double count for the same memeber.
   }
   urlData === undefined ? res.send('The url you input does not exist') : res.redirect(urlData.longURL);
   
@@ -157,16 +163,6 @@ app.get('/u/:shortURL', (req, res) => {                 //This will redirect a u
 ////////////////////////////
 //      login & out       //
 ////////////////////////////
-app.get('/login', (req, res) => {      
-  const user = users[req.session.user_id];
-
-  let templateVars = { 
-    user_id: req.session.user_id,
-    user: user
-  };
-  res.render('urls_login', templateVars);
-});
-
 app.post('/login', (req, res) => {      
   if (!emailChecker(users, req.body.email)) {     //check if a given email matches one of them in the database.
     return res.send(403);
@@ -176,6 +172,16 @@ app.post('/login', (req, res) => {
 
   req.session.user_id = emailChecker(users, req.body.email); 
   res.redirect(`/urls`);
+});
+
+app.get('/login', (req, res) => {      
+  const user = users[req.session.user_id];
+
+  let templateVars = { 
+    user_id: req.session.user_id,
+    user: user
+  };
+  res.render('urls_login', templateVars);
 });
 
 app.post('/logout', (req, res) => {  
@@ -220,6 +226,3 @@ app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
 
-// const urlTracker = {
-//   b6UTxQ: { visits: 0, visitingMembers: [], anonymousVisitor: 0 }   
-// };
