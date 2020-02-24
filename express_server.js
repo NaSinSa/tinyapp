@@ -209,7 +209,7 @@ app.post('/register', (req, res) => {             //adding a new user to users, 
   let newUser = users[newUserId];
   newUser['id'] = newUserId;
   
-  if (req.body.email === '' || emailChecker(users, req.body.email)) {     //check if a given email is empty or already exists.
+  if (req.body.email === '' || emailChecker(users, req.body.email) || req.body.password === '') {     //check if a given email is empty or already exists.
     return res.send(400);
   }
   
